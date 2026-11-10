@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bench check for Libre2 Key's Bluetooth hand-off, without the watch.
+"""Bench check for the AmazCGM phone app's Bluetooth hand-off, without the watch.
 
 Acts like AmazCGM: finds the phone by its advert, connects, enables
 notifications, writes GET, reassembles the frames, checks the CRC32 against
@@ -8,7 +8,7 @@ the advert, prints the JSON and writes ACK.
     pip install bleak
     python3 tools/ble_bench.py
 
-Make the phone visible first: open Libre2 Key or tap "Make visible to watch".
+Make the phone visible first: open the AmazCGM phone app or tap "Make visible to watch".
 """
 import asyncio
 import sys
@@ -45,14 +45,14 @@ async def main() -> int:
             found["crc"] = int.from_bytes(payload[len(MAGIC):len(MAGIC) + 4], "little")
             found["via"] = "manufacturer data"
 
-    print("Scanning 15 s for Libre2 Key…")
+    print("Scanning 15 s for the AmazCGM phone app…")
     async with BleakScanner(on_advert):
         for _ in range(150):
             if "dev" in found:
                 break
             await asyncio.sleep(0.1)
     if "dev" not in found:
-        print("Not found. Is Libre2 Key visible?")
+        print("Not found. Is the AmazCGM phone app visible?")
         return 1
     dev, crc = found["dev"], found["crc"]
     print(f"Found {dev.address} via {found['via']}, advert CRC {'unknown' if crc is None else f'{crc:08x}'}")

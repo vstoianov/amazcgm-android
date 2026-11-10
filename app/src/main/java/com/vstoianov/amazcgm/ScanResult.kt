@@ -1,7 +1,9 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.libre.FramInfo
-import com.vstoianov.libre2key.libre.Sensor
+import com.vstoianov.amazcgm.cgm.CgmType
+import com.vstoianov.amazcgm.cgm.PAYLOAD_SCHEMA
+import com.vstoianov.amazcgm.libre.FramInfo
+import com.vstoianov.amazcgm.libre.Sensor
 import org.json.JSONObject
 import java.util.Date
 
@@ -11,6 +13,7 @@ fun ByteArray.hex(): String = joinToString("") { "%02X".format(it) }
 fun ByteArray.bleAddress(): String = reversed().joinToString(":") { "%02X".format(it) }
 
 data class ScanResult(
+    val type: CgmType,
     val time: Date,
     val sensor: Sensor,
     val fram: FramInfo?,
@@ -24,6 +27,8 @@ data class ScanResult(
 
     /** Only the fields the watch Libre 2+ app actually reads. */
     fun toJson(): JSONObject = JSONObject().apply {
+        put("schema", PAYLOAD_SCHEMA)
+        put("sensorType", type.code.toString())
         put("serial", sensor.serial)
         put("uid", sensor.uid.hex())
         put("patchInfo", sensor.patchInfo.hex())

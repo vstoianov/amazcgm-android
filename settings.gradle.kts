@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Libre2Key"
+rootProject.name = "AmazCGM"
 include(":app")

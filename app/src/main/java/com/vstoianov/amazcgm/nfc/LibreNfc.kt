@@ -1,7 +1,7 @@
-package com.vstoianov.libre2key.nfc
+package com.vstoianov.amazcgm.nfc
 
 import android.nfc.tech.NfcV
-import com.vstoianov.libre2key.libre.Libre2Crypto
+import com.vstoianov.amazcgm.libre.Libre2Crypto
 import java.io.IOException
 
 /**

@@ -1,9 +1,10 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.libre.FactoryCalibration
-import com.vstoianov.libre2key.libre.FramInfo
-import com.vstoianov.libre2key.libre.Sensor
-import com.vstoianov.libre2key.libre.SensorState
+import com.vstoianov.amazcgm.cgm.CgmType
+import com.vstoianov.amazcgm.libre.FactoryCalibration
+import com.vstoianov.amazcgm.libre.FramInfo
+import com.vstoianov.amazcgm.libre.Sensor
+import com.vstoianov.amazcgm.libre.SensorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -18,6 +19,7 @@ class ScanResultJsonTest {
     @Test
     fun `json contains only the fields the watch reads`() {
         val result = ScanResult(
+            type = CgmType.LIBRE2_EU,
             time = Date(),
             sensor = Sensor(bytes("2fe7b10000a407e0"), bytes("9d083001712b")),
             fram = null,
@@ -32,6 +34,8 @@ class ScanResultJsonTest {
         val keys = json.keys().asSequence().toSet()
         assertEquals(
             setOf(
+                "schema",
+                "sensorType",
                 "serial",
                 "uid",
                 "patchInfo",
@@ -47,6 +51,8 @@ class ScanResultJsonTest {
         assertFalse(json.has("bleService"))
         assertEquals("AA:BB:CC:DD:EE:FF", json.getString("bleAddress"))
         assertEquals("42", json.getString("unlockCode"))
+        assertEquals("2", json.getString("schema"))
+        assertEquals("257", json.getString("sensorType"))
         assertEquals("1", json.getString("streamingEnabled"))
         assertFalse(json.has("unlockPayloads"))
         assertTrue(json.getString("uid").equals("2FE7B10000A407E0", ignoreCase = true))
@@ -55,6 +61,7 @@ class ScanResultJsonTest {
     @Test
     fun `read-only scan does not claim a fresh streaming enable`() {
         val result = ScanResult(
+            type = CgmType.LIBRE2_EU,
             time = Date(),
             sensor = Sensor(bytes("2fe7b10000a407e0"), bytes("9d083001712b")),
             fram = null,
@@ -71,6 +78,7 @@ class ScanResultJsonTest {
     @Test
     fun `json includes factory calibration when FRAM CRC is ok`() {
         val result = ScanResult(
+            type = CgmType.LIBRE2_EU,
             time = Date(),
             sensor = Sensor(bytes("2fe7b10000a407e0"), bytes("9d083001712b")),
             fram = FramInfo(

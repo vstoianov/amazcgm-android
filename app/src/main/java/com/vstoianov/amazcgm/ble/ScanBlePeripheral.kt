@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.ble
+package com.vstoianov.amazcgm.ble
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -436,7 +436,7 @@ class ScanBlePeripheral(
         private const val TAG = "ScanBlePeripheral"
         /** Name the phone advertises while visible; the watch matches on it. */
         const val ADVERTISED_NAME = "AMZCGM"
-        private const val PREFS_NAME = "libre2key_ble"
+        private const val PREFS_NAME = "amazcgm_ble"
         private const val KEY_SAVED_NAME = "bt_name_saved"
         const val WINDOW_MS = 10L * 60L * 1000L
         private const val CLOSE_AFTER_ACK_MS = 5_000L

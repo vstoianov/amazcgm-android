@@ -5,3 +5,7 @@ local.properties
 .idea/
 .DS_Store
 captures/
+keystore.properties
+*.jks
+*.keystore
+dist/

@@ -1,6 +1,25 @@
 <resources>
-    <string name="app_name">Libre2 Key</string>
-    <string name="app_subtitle">Sensor setup for AmazCGM</string>
+    <string name="app_name">AmazCGM</string>
+    <string name="app_subtitle">Sensor setup for your watch</string>
+
+    <!-- Sensor type -->
+    <string name="sensor_type">Sensor type</string>
+    <string name="sensor_type_unsupported">The AmazCGM watch app does not use this sensor yet. The data is still sent so a later watch version can use it.</string>
+    <string name="sensor_type_mismatch">Scanned sensor is %1$s, but %2$s is selected. Nothing was saved.</string>
+    <string name="sensor_type_unknown_scan">This sensor (%1$s) is not in the sensor list. Nothing was saved.</string>
+    <string name="sensor_type_switch">Switch</string>
+    <string name="stored_summary">Ready to send: %1$s · %2$s</string>
+
+    <!-- Code entry card -->
+    <string name="code_title">Sensor code</string>
+    <string name="code_hint_dexcom">Enter the 4-digit pairing code printed on the sensor applicator.</string>
+    <string name="code_hint_sibionics">Enter the sensor code printed on the sensor package.</string>
+    <string name="code_label">Code</string>
+    <string name="code_invalid">Code does not match the %1$s format</string>
+    <string name="code_serial_label">Serial number (optional)</string>
+    <string name="code_serial_helper">Printed on the sensor package. Helps the watch tell sensors apart.</string>
+    <string name="code_save">Save code</string>
+    <string name="code_saved">Code saved</string>
 
     <!-- NFC state card -->
     <string name="nfc_ready">Ready to scan</string>
@@ -51,7 +70,7 @@
     <string name="never_fetched">Not fetched by the watch yet</string>
     <string name="last_fetched">Fetched by the watch at %1$s</string>
     <string name="handoff_channel">Watch transfer</string>
-    <string name="handoff_notification_title">Visible to AmazCGM</string>
+    <string name="handoff_notification_title">Visible to the watch</string>
     <string name="handoff_notification_text">On the watch open AmazCGM and tap Sync from phone</string>
     <string name="handoff_stop">Stop</string>
 

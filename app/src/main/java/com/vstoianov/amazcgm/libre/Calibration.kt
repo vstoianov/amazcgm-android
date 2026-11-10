@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.libre
+package com.vstoianov.amazcgm.libre
 
 import kotlin.math.ln
 import kotlin.math.pow

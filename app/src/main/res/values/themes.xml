@@ -1,3 +1,3 @@
 <resources>
-    <style name="Theme.Libre2Key" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.AmazCGM" parent="Theme.Material3.DayNight.NoActionBar" />
 </resources>

@@ -1,6 +1,6 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.libre.Libre2Crypto
+import com.vstoianov.amazcgm.libre.Libre2Crypto
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

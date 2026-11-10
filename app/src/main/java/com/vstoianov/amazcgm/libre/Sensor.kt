@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.libre
+package com.vstoianov.amazcgm.libre
 
 /**
  * Everything that can be derived from the 8-byte NFC UID and the 6-byte patch info

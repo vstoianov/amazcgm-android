@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.ble
+package com.vstoianov.amazcgm.ble
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID

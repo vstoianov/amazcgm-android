@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.ble
+package com.vstoianov.amazcgm.ble
 
 import android.Manifest
 import android.app.Notification
@@ -15,8 +15,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
-import com.vstoianov.libre2key.MainActivity
-import com.vstoianov.libre2key.R
+import com.vstoianov.amazcgm.MainActivity
+import com.vstoianov.amazcgm.R
 
 /**
  * Foreground service that keeps [ScanBlePeripheral] advertising while this app
@@ -135,7 +135,7 @@ class WatchHandoffService : Service() {
     }
 
     companion object {
-        private const val ACTION_STOP = "com.vstoianov.libre2key.STOP_WATCH_HANDOFF"
+        private const val ACTION_STOP = "com.vstoianov.amazcgm.STOP_WATCH_HANDOFF"
         private const val CHANNEL_ID = "watch_handoff"
         private const val NOTIFY_ID = 17580
         private const val IDLE_STOP_MS = 30L * 60L * 1000L

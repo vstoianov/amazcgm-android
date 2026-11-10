@@ -1,11 +1,11 @@
-Libre2 Key
+AmazCGM (Android phone app)
 Copyright (c) 2026 Vasil Stoianov
 Licensed under the GNU General Public License v3.0 or later. See LICENSE.
 
 Third-party notices for code in this app.
 
-app/src/main/java/com/vstoianov/libre2key/libre/Libre2Crypto.kt
-app/src/main/java/com/vstoianov/libre2key/libre/Calibration.kt
+app/src/main/java/com/vstoianov/amazcgm/libre/Libre2Crypto.kt
+app/src/main/java/com/vstoianov/amazcgm/libre/Calibration.kt
   Libre 2 EU unlock, decrypt, and factory calibration arithmetic.
   Test vectors in Libre2CryptoTest.kt come from DiaBLE fixtures.
   Derived from:

@@ -1,10 +1,10 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.libre.Libre2Crypto
-import com.vstoianov.libre2key.libre.Sensor
-import com.vstoianov.libre2key.libre.SensorFamily
-import com.vstoianov.libre2key.libre.SensorRegion
-import com.vstoianov.libre2key.libre.SensorType
+import com.vstoianov.amazcgm.libre.Libre2Crypto
+import com.vstoianov.amazcgm.libre.Sensor
+import com.vstoianov.amazcgm.libre.SensorFamily
+import com.vstoianov.amazcgm.libre.SensorRegion
+import com.vstoianov.amazcgm.libre.SensorType
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals

@@ -1,6 +1,6 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.ble.ScanFrames
+import com.vstoianov.amazcgm.ble.ScanFrames
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

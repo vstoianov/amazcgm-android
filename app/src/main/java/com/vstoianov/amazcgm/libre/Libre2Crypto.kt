@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key.libre
+package com.vstoianov.amazcgm.libre
 
 /**
  * Libre 2 (security generation 1) obfuscation used by the NFC `A1` sub-commands,

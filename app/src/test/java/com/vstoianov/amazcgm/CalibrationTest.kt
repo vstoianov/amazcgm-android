@@ -1,7 +1,7 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
-import com.vstoianov.libre2key.libre.FactoryCalibration
-import com.vstoianov.libre2key.libre.readFramBits
+import com.vstoianov.amazcgm.libre.FactoryCalibration
+import com.vstoianov.amazcgm.libre.readFramBits
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

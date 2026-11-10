@@ -1,4 +1,4 @@
-package com.vstoianov.libre2key
+package com.vstoianov.amazcgm
 
 import android.Manifest
 import android.content.ClipData
@@ -18,6 +18,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.text.format.DateFormat
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
@@ -29,21 +30,28 @@ import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
-import com.vstoianov.libre2key.databinding.ActivityMainBinding
-import com.vstoianov.libre2key.libre.FramInfo
-import com.vstoianov.libre2key.libre.Libre2Crypto
-import com.vstoianov.libre2key.libre.Sensor
-import com.vstoianov.libre2key.libre.SensorState
-import com.vstoianov.libre2key.libre.SensorType
-import com.vstoianov.libre2key.ble.ScanBlePeripheral
-import com.vstoianov.libre2key.ble.WatchHandoffService
-import com.vstoianov.libre2key.nfc.LibreNfc
+import com.google.android.material.snackbar.Snackbar
+import com.vstoianov.amazcgm.cgm.CgmType
+import com.vstoianov.amazcgm.cgm.CgmVendor
+import com.vstoianov.amazcgm.cgm.CodeEntry
+import com.vstoianov.amazcgm.cgm.InputMethod
+import com.vstoianov.amazcgm.cgm.cgmType
+import com.vstoianov.amazcgm.databinding.ActivityMainBinding
+import com.vstoianov.amazcgm.libre.FramInfo
+import com.vstoianov.amazcgm.libre.Libre2Crypto
+import com.vstoianov.amazcgm.libre.Sensor
+import com.vstoianov.amazcgm.libre.SensorState
+import com.vstoianov.amazcgm.libre.SensorType
+import com.vstoianov.amazcgm.ble.ScanBlePeripheral
+import com.vstoianov.amazcgm.ble.WatchHandoffService
+import com.vstoianov.amazcgm.nfc.LibreNfc
 import org.json.JSONObject
 import java.io.IOException
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
 
@@ -56,6 +64,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
     // NFC callbacks arrive off the UI thread — never read views from there.
     private val enableStreamingWanted = AtomicBoolean(true)
     private val unlockCodeWanted = AtomicLong(DEFAULT_UNLOCK_CODE)
+    private val selectedType = AtomicReference(CgmType.DEFAULT)
 
     private val prefs by lazy { getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
 
@@ -91,6 +100,9 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 
+        selectedType.set(CgmType.of(prefs.getInt(KEY_SENSOR_TYPE, CgmType.DEFAULT.code)) ?: CgmType.DEFAULT)
+        setupSensorTypeMenu()
+
         val storedCode = prefs.getLong(KEY_LAST_CODE, DEFAULT_UNLOCK_CODE)
         binding.unlockCode.setText(storedCode.toString())
         unlockCodeWanted.set(storedCode)
@@ -111,8 +123,11 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         binding.shareJsonButton.setOnClickListener { shareJson() }
         binding.copyJsonButton.setOnClickListener { copyJson() }
         binding.bleVisibleButton.setOnClickListener { makeVisibleClicked() }
+        binding.saveCodeButton.setOnClickListener { saveCode() }
+        binding.codeInput.doAfterTextChanged { binding.codeLayout.error = null }
 
         restoreStoredScan()
+        applySensorTypeUi()
         if (hasStoredScan()) WatchHandoffService.start(this)
         requestRuntimePermissions()
     }
@@ -195,7 +210,16 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
 
     override fun onResume() {
         super.onResume()
+        updateNfcReader()
+    }
+
+    /** Reader mode is only on while an NFC sensor type is selected. */
+    private fun updateNfcReader() {
         val adapter = nfcAdapter
+        if (selectedType.get().input != InputMethod.NFC) {
+            adapter?.disableReaderMode(this)
+            return
+        }
         if (adapter == null) {
             setNfcState(NfcState.MISSING)
             return
@@ -225,24 +249,35 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
     override fun onTagDiscovered(tag: Tag) {
         val enableStreaming = enableStreamingWanted.get()
         val unlockCode = unlockCodeWanted.get()
+        val type = selectedType.get()
+        if (type.input != InputMethod.NFC) return
         runOnUiThread { setNfcState(NfcState.READING) }
         try {
-            val result = scan(tag, enableStreaming, unlockCode)
+            val result = scan(tag, type, enableStreaming, unlockCode)
             vibrate(longArrayOf(0, 60, 40, 60))
             runOnUiThread { show(result) }
+        } catch (e: TypeMismatch) {
+            vibrate(longArrayOf(0, 400))
+            runOnUiThread { showTypeMismatch(e) }
         } catch (e: Throwable) {
             vibrate(longArrayOf(0, 400))
             runOnUiThread { setNfcState(NfcState.ERROR, e.message ?: e.javaClass.simpleName) }
         }
     }
 
-    private fun scan(tag: Tag, enableStreaming: Boolean, unlockCode: Long): ScanResult {
+    /** The scanned sensor is not the selected type. Thrown before anything is written to it. */
+    private class TypeMismatch(val detected: CgmType?, val sensor: Sensor, val selected: CgmType) :
+        Exception("sensor type mismatch")
+
+    private fun scan(tag: Tag, type: CgmType, enableStreaming: Boolean, unlockCode: Long): ScanResult {
         val nfcv = NfcV.get(tag) ?: throw IOException(getString(R.string.not_nfcv))
         nfcv.connect()
         nfcv.use {
             val uid = tag.id
             val patchInfo = LibreNfc.readPatchInfo(nfcv)
             val sensor = Sensor(uid, patchInfo)
+            val detected = sensor.cgmType()
+            if (detected != type) throw TypeMismatch(detected, sensor, type)
             val notes = mutableListOf<String>()
 
             if (!sensor.supportsOpenStreaming) {
@@ -299,6 +334,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
             }
 
             return ScanResult(
+                type = type,
                 time = Date(),
                 sensor = sensor,
                 fram = framInfo,
@@ -338,6 +374,15 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         val json = prefs.getString(KEY_SCAN_JSON, null)?.takeIf { it.isNotBlank() } ?: return
         try {
             val data = JSONObject(json)
+            val type = storedType(data)
+            if (type.input == InputMethod.CODE) {
+                if (type == selectedType.get()) {
+                    binding.codeInput.setText(data.optString("code"))
+                    binding.serialInput.setText(data.optString("serial"))
+                }
+                return
+            }
+            if (type != selectedType.get()) return
             val uid = hexToBytes(data.getString("uid"))
             val patch = hexToBytes(data.getString("patchInfo"))
             if (uid.size != 8 || patch.size != 6) return
@@ -443,6 +488,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         binding.shareJsonButton.isEnabled = hasScan
         binding.copyJsonButton.isEnabled = hasScan
         renderBluetooth(hasScan)
+        renderStoredSummary()
 
         val served = prefs.getLong(KEY_LAST_SERVED, 0L)
         binding.lastFetched.text = if (served > 0) {
@@ -505,7 +551,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         val json = storedJson() ?: return
         val pretty = try { JSONObject(json).toString(2) } catch (_: Exception) { json }
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Libre 2 keys", pretty))
+        clipboard.setPrimaryClip(ClipData.newPlainText(storedLabel(json), pretty))
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
         }
@@ -518,10 +564,101 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         val body = data?.toString(2) ?: json
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Libre 2 keys $serial".trim())
+            putExtra(Intent.EXTRA_SUBJECT, "${storedLabel(json)} $serial".trim())
             putExtra(Intent.EXTRA_TEXT, body)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.share)))
+    }
+
+    private fun setupSensorTypeMenu() {
+        val types = CgmType.entries
+        val labels = types.map { typeMenuLabel(it) }
+        binding.sensorTypeMenu.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, labels))
+        binding.sensorTypeMenu.setText(typeMenuLabel(selectedType.get()), false)
+        binding.sensorTypeMenu.setOnItemClickListener { _, _, position, _ -> selectType(types[position]) }
+    }
+
+    private fun typeMenuLabel(type: CgmType): String = type.label
+
+    private fun selectType(type: CgmType) {
+        if (type == selectedType.get()) return
+        selectedType.set(type)
+        prefs.edit().putInt(KEY_SENSOR_TYPE, type.code).apply()
+        binding.sensorTypeMenu.setText(typeMenuLabel(type), false)
+        binding.codeInput.setText("")
+        binding.serialInput.setText("")
+        binding.codeLayout.error = null
+        restoreStoredScan()
+        applySensorTypeUi()
+        updateNfcReader()
+        renderTransferCard()
+    }
+
+    /** Shows the NFC cards or the code card for the selected type. */
+    private fun applySensorTypeUi() {
+        val type = selectedType.get()
+        val nfc = type.input == InputMethod.NFC
+        binding.nfcCard.visibility = if (nfc) View.VISIBLE else View.GONE
+        binding.sensorCard.visibility = if (nfc) View.VISIBLE else View.GONE
+        binding.optionsCard.visibility = if (nfc) View.VISIBLE else View.GONE
+        binding.codeCard.visibility = if (nfc) View.GONE else View.VISIBLE
+        binding.sensorTypeLayout.helperText =
+            if (type.amazcgmSupported) null else getString(R.string.sensor_type_unsupported)
+        binding.codeHint.text = getString(
+            if (type.vendor == CgmVendor.DEXCOM) R.string.code_hint_dexcom else R.string.code_hint_sibionics
+        )
+    }
+
+    private fun saveCode() {
+        val type = selectedType.get()
+        if (type.input != InputMethod.CODE) return
+        val code = type.normalizeCode(binding.codeInput.text?.toString())
+        if (code == null) {
+            binding.codeLayout.error = getString(R.string.code_invalid, type.label)
+            return
+        }
+        val serial = binding.serialInput.text?.toString()?.trim()?.uppercase()?.takeIf { it.isNotEmpty() }
+        val entry = CodeEntry(type, code, serial)
+        binding.codeInput.setText(code)
+        lastResult = null
+        prefs.edit().putString(KEY_SCAN_JSON, entry.toJson().toString()).apply()
+        Toast.makeText(this, R.string.code_saved, Toast.LENGTH_SHORT).show()
+        WatchHandoffService.start(this)
+        renderTransferCard()
+    }
+
+    private fun showTypeMismatch(e: TypeMismatch) {
+        val scanned = e.detected?.label ?: e.sensor.type.label
+        val message = if (e.detected == null) {
+            getString(R.string.sensor_type_unknown_scan, scanned)
+        } else {
+            getString(R.string.sensor_type_mismatch, scanned, e.selected.label)
+        }
+        setNfcState(NfcState.ERROR, message)
+        val detected = e.detected ?: return
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setAction(R.string.sensor_type_switch) { selectType(detected) }
+            .show()
+    }
+
+    /** Type of a stored payload. Payloads without `sensorType` predate it and are Libre 2 EU. */
+    private fun storedType(data: JSONObject): CgmType =
+        data.optString("sensorType").toIntOrNull()?.let { CgmType.of(it) } ?: CgmType.DEFAULT
+
+    private fun storedLabel(json: String): String =
+        try { storedType(JSONObject(json)).label } catch (_: Exception) { CgmType.DEFAULT.label }
+
+    private fun renderStoredSummary() {
+        val json = prefs.getString(KEY_SCAN_JSON, null)?.takeIf { it.isNotBlank() }
+        val data = json?.let { try { JSONObject(it) } catch (_: Exception) { null } }
+        if (data == null) {
+            binding.storedSummary.visibility = View.GONE
+            return
+        }
+        val type = storedType(data)
+        val id = data.optString("serial").ifBlank { data.optString("code") }
+        binding.storedSummary.text = getString(R.string.stored_summary, type.label, id)
+        binding.storedSummary.visibility = View.VISIBLE
     }
 
     private fun vibrate(pattern: LongArray) {
@@ -542,7 +679,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
     private fun macKey(serial: String) = "mac_${serial.lowercase(Locale.US)}"
 
     companion object {
-        const val PREFS = "libre2key"
+        const val PREFS = "amazcgm"
         const val KEY_SCAN_JSON = "scan_json"
         const val KEY_LAST_SERVED = "last_served_at"
         /** Touched by the service on start and stop so the activity re-renders. */
@@ -555,6 +692,7 @@ class MainActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
         )
         private const val TICK_MS = 15_000L
         private const val KEY_LAST_CODE = "last_unlock_code"
+        private const val KEY_SENSOR_TYPE = "sensor_type"
         private const val DEFAULT_UNLOCK_CODE = 42L
         private const val DAY1_MINUTES = 24 * 60
         private const val REQ_PERMS = 1
