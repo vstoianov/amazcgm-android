@@ -32,5 +32,5 @@ All notable changes to the AmazCGM phone app (called Libre2 Key up to 1.9) are l
 
 [Unreleased]: https://github.com/vstoianov/amazcgm-android/compare/v1.10...HEAD
 [1.10]: https://github.com/vstoianov/amazcgm-android/releases/tag/v1.10
-[1.9]: https://github.com/vstoianov/amazcgm-android/commit/09c174f
-[1.4]: https://github.com/vstoianov/amazcgm-android/commit/abd9ad1
+[1.9]: https://github.com/vstoianov/amazcgm-android/commit/79baf7f
+[1.4]: https://github.com/vstoianov/amazcgm-android/commit/c3bb3d7
